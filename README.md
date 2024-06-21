@@ -1,8 +1,8 @@
 # jwt-validate
 
-[![npm version](https://badge.fury.io/js/jwt-validate.svg)](https://badge.fury.io/js/jwt-validate)
-
 Validate JWT tokens in Node.js.
+
+[![npm version](https://badge.fury.io/js/jwt-validate.svg)](https://badge.fury.io/js/jwt-validate)
 
 ## Installation
 
