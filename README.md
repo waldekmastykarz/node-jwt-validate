@@ -150,10 +150,12 @@ Responsible for validating JWT tokens using JWKS (JSON Web Key Set).
 
 ### Functions
 
-#### `getEntraJwksUri`
+#### `getEntraJwksUri(tenant)`
 
 - **Description**
   - Gets the JWKS URL for the Microsoft Entra common tenant.
+- **Parameters**
+  - `tenant` string (optional, default=`common`) - The tenant to get the JWKS URL for.
 - **Returns**
   - `Promise<string>` - The JWKS URI.
 
