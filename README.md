@@ -111,8 +111,8 @@ Responsible for validating JWT tokens using JWKS (JSON Web Key Set).
 - `constructor(options)`
   - **Parameters**
     - `options`: Object - Configuration options for the TokenValidator.
-      - `cache`: boolean (optional, default=true) - Whether to cache the JWKS keys.
-      - `cacheMaxAge`: number (optional, default=86400000) - The maximum age of the cache in milliseconds (default is 24 hours).
+      - `cache`: boolean (optional, default=`true`) - Whether to cache the JWKS keys.
+      - `cacheMaxAge`: number (optional, default=`86400000`) - The maximum age of the cache in milliseconds (default is 24 hours).
       - `jwksUri`: string - The URI to fetch the JWKS keys from.
   - **Throws**
     - `Error` - If the options parameter is not provided.
@@ -131,6 +131,22 @@ Responsible for validating JWT tokens using JWKS (JSON Web Key Set).
     - `Promise<JwtPayload | string>` - The decoded and verified JWT token.
   - **Throws**
     - `Error` - If the token is invalid or the validation fails.
+
+- `clearCache()`
+  - **Description**
+    - Clears the key cache used by the TokenValidator.
+  - **Parameters**
+    - None
+  - **Returns**
+    - None
+
+- `deleteKey(kid)`
+  - **Description**
+    - Deletes a specific key from the cache.
+  - **Parameters**
+    - `kid` string - The key ID to delete from the cache.
+  - **Returns**
+    - None
 
 ### Functions
 
