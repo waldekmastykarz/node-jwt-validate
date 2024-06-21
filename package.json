@@ -6,7 +6,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/waldekmastykarz/node-jwt-validate"
+    "url": "git+https://github.com/waldekmastykarz/node-jwt-validate.git"
   },
   "bugs": {
     "url": "https://github.com/waldekmastykarz/node-jwt-validate/issues"
