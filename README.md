@@ -98,6 +98,38 @@ catch (ex) {
 }
 ```
 
+### Validate a Microsoft Entra token for a multitenant app
+
+```javascript
+import { TokenValidator, getEntraJwksUri } from 'jwt-validate';
+
+// gets the JWKS URL for the Microsoft Entra common tenant
+const entraJwksUri = await getEntraJwksUri();
+
+// create a new token validator with the JWKS URL
+const validator = new TokenValidator({
+  jwksUri: entraJwksUri
+});
+try {
+  // define validation options
+  const options = {
+    // allowed audience
+    audience: '00000000-0000-0000-0000-000000000000',
+    // allowed issuer multitenant
+    issuer: 'https://login.microsoftonline.com/{tenantid}/v2.0'
+  };
+  // validate the token
+  const validToken = await validator.validateToken(token, options);
+  // token is valid
+  // verify that the tenant is allowed by comparing the value of the
+  // validToken.tid property to your allow-list
+}
+catch (ex) {
+  // Token is invalid
+  console.error(ex);
+}
+```
+
 ## API Reference
 
 ### Classes
@@ -126,6 +158,8 @@ Responsible for validating JWT tokens using JWKS (JSON Web Key Set).
     - `token`: string - The JWT token to validate.
     - `options` Object (optional): Validation options. [VerifyOptions](https://github.com/auth0/node-jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback) from the `jsonwebtoken` library with additional properties.
       - `idtyp` string (optional): The [idtyp](https://learn.microsoft.com/en-us/entra/identity-platform/optional-claims-reference#:~:text=set%20as%20well.-,idtyp,-Token%20type) claim to be validated against.
+      - `roles` string[] (optional): Roles expected in the 'roles' claim in the JWT token.
+      - `scp` string[] (optional): Scopes expected in the 'scp' claim in the JWT token.
       - `ver`: string (optional) - The version claim to be validated against.
   - **Returns**
     - `Promise<JwtPayload | string>` - The decoded and verified JWT token.
