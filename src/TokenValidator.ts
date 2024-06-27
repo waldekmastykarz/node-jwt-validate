@@ -14,17 +14,18 @@ export interface TokenValidatorOptions {
 }
 
 export interface ValidateTokenOptions extends VerifyOptions {
+  allowedTenants?: string[];
   idtyp?: string;
-  ver?: string;
-  scp?: string[];
   roles?: string[];
+  scp?: string[];
+  ver?: string;
 }
 
 export interface EntraJwtPayload extends JwtPayload {
   idtyp?: string;
-  ver?: string;
-  scp?: string[];
   roles?: string[];
+  scp?: string[];
+  ver?: string;
 }
 
 export class TokenValidator {
@@ -61,6 +62,7 @@ export class TokenValidator {
    * Validates a JWT token.
    * @param {string} token The JWT token to validate.
    * @param {import('jsonwebtoken').VerifyOptions & { complete?: false } & { idtyp?: string, ver?: string, scp?: string[], roles?: string[] }} [options] Validation options.
+   * @property {string[]} [options.allowedTenants] The allowed tenants for the JWT token. Compared against the 'tid' claim.
    * @property {string} [options.idtyp] The expected value of the 'idtyp' claim in the JWT token.
    * @property {string[]} [options.roles] Roles expected in the 'roles' claim in the JWT token.
    * @property {string[]} [options.scp] Scopes expected in the 'scp' claim in the JWT token.
@@ -84,16 +86,32 @@ export class TokenValidator {
       return verifiedToken;
     }
 
+    const validators = [
+      TokenValidator.validateIdtyp,
+      TokenValidator.validateVer,
+      TokenValidator.validateScopesAndRoles,
+      TokenValidator.validateAllowedTenants
+    ];
+    validators.forEach(validator => validator(verifiedToken, options));
+
+    return verifiedToken;
+  }
+
+  private static validateIdtyp(jwt: EntraJwtPayload, options: ValidateTokenOptions) {
     if (options.idtyp &&
-      options.idtyp !== verifiedToken.idtyp) {
-      throw new Error(`jwt idtyp is invalid. expected: ${options.idtyp}`);
+      options.idtyp !== jwt.idtyp) {
+      throw new Error(`jwt idtyp is invalid. Expected: ${options.idtyp}`);
     }
+  }
 
+  private static validateVer(jwt: EntraJwtPayload, options: ValidateTokenOptions) {
     if (options.ver &&
-      options.ver !== verifiedToken.ver) {
-      throw new Error(`jwt ver is invalid. expected: ${options.ver}`);
+      options.ver !== jwt.ver) {
+      throw new Error(`jwt ver is invalid. Expected: ${options.ver}`);
     }
+  }
 
+  private static validateScopesAndRoles(jwt: EntraJwtPayload, options: ValidateTokenOptions) {
     if (options.scp || options.roles) {
       const validateClaims = (claimsFromTheToken: string[], requiredClaims: string[], claimsType: string) => {
         const hasAnyRequiredClaim = requiredClaims.some(claim => claimsFromTheToken.includes(claim));
@@ -103,22 +121,28 @@ export class TokenValidator {
       };
 
       if (options.scp && options.roles) {
-        if (verifiedToken.scp) {
-          validateClaims(verifiedToken.scp, options.scp, claimsType.scopes);
+        if (jwt.scp) {
+          validateClaims(jwt.scp, options.scp, claimsType.scopes);
         }
-        else if (verifiedToken.roles) {
-          validateClaims(verifiedToken.roles, options.roles, claimsType.roles);
+        else if (jwt.roles) {
+          validateClaims(jwt.roles, options.roles, claimsType.roles);
         }
       }
       else if (options.scp) {
-        validateClaims(verifiedToken.scp ?? [], options.scp, claimsType.scopes);
+        validateClaims(jwt.scp ?? [], options.scp, claimsType.scopes);
       }
       else if (options.roles) {
-        validateClaims(verifiedToken.roles ?? [], options.roles, claimsType.roles);
+        validateClaims(jwt.roles ?? [], options.roles, claimsType.roles);
       }
     }
+  }
 
-    return verifiedToken;
+  private static validateAllowedTenants(jwt: EntraJwtPayload, options: ValidateTokenOptions) {
+    if (options.allowedTenants && options.allowedTenants.length > 0) {
+      if (!jwt.tid || !options.allowedTenants.includes(jwt.tid)) {
+        throw new Error(`jwt tid is not allowed. Allowed tenants: ${options.allowedTenants.join(', ')}`);
+      }
+    }
   }
 
   /**

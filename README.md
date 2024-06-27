@@ -12,7 +12,38 @@ npm install jwt-validate
 
 ## Usage
 
-### Validate a Microsoft Entra token
+### Basic setup
+
+Following snippets show the basic setup for validating JWT tokens in apps that use the CommonJS and ESM module systems. The following sections show specific use cases on top of the basic setup.
+
+#### CommonJS
+
+```javascript
+const { TokenValidator, getEntraJwksUri } = require('jwt-validate');
+
+// gets the JWKS URL for the Microsoft Entra common tenant
+const entraJwksUri = await getEntraJwksUri();
+
+// create a new token validator with the JWKS URL
+const validator = new TokenValidator({
+  jwksUri: entraJwksUri
+});
+try {
+  // define validation options
+  const options = {
+    // ...
+  };
+  // validate the token
+  const validToken = await validator.validateToken(token, options);
+  // Token is valid
+}
+catch (ex) {
+  // Token is invalid
+  console.error(ex);
+}
+```
+
+#### ESM
 
 ```javascript
 import { TokenValidator, getEntraJwksUri } from 'jwt-validate';
@@ -27,10 +58,7 @@ const validator = new TokenValidator({
 try {
   // define validation options
   const options = {
-    // allowed audience
-    audience: '00000000-0000-0000-0000-000000000000',
-    // allowed issuer
-    issuer: 'https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/v2.0'
+    // ...
   };
   // validate the token
   const validToken = await validator.validateToken(token, options);
@@ -42,92 +70,72 @@ catch (ex) {
 }
 ```
 
-### Validate that the token is an application token
+### Sample use cases
+
+Following are several examples of using the package to validate JWT tokens in different scenarios. For the basic setup see the previous section.
+
+#### Validate a Microsoft Entra token
+
+```javascript
+const options = {
+  // allowed audience
+  audience: '00000000-0000-0000-0000-000000000000',
+  // allowed issuer
+  issuer: 'https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/v2.0'
+};
+// validate the token
+const validToken = await validator.validateToken(token, options);
+```
+
+#### Validate that the token is an application token
 
 Validate that the token is an application token by checking the `idtyp` claim. Requires the `idtyp` claim to be present in the token.
 
 ```javascript
-import { TokenValidator, getEntraJwksUri } from 'jwt-validate';
-
-// gets the JWKS URL for the Microsoft Entra common tenant
-const entraJwksUri = await getEntraJwksUri();
-
-// create a new token validator with the JWKS URL
-const validator = new TokenValidator({
-  jwksUri: entraJwksUri
-});
-try {
-  // define validation options
-  const options = {
-    idtyp: 'app'
-  };
-  // validate the token
-  const validToken = await validator.validateToken(token, options);
-  // Token is valid
-}
-catch (ex) {
-  // Token is invalid
-  console.error(ex);
-}
+const options = {
+  idtyp: 'app'
+};
+// validate the token
+const validToken = await validator.validateToken(token, options);
+// Token is valid
 ```
 
-### Validate that the token is a v2.0 token
+#### Validate that the token is a v2.0 token
 
 ```javascript
-import { TokenValidator, getEntraJwksUri } from 'jwt-validate';
-
-// gets the JWKS URL for the Microsoft Entra common tenant
-const entraJwksUri = await getEntraJwksUri();
-
-// create a new token validator with the JWKS URL
-const validator = new TokenValidator({
-  jwksUri: entraJwksUri
-});
-try {
-  // define validation options
-  const options = {
-    ver: '2.0'
-  };
-  // validate the token
-  const validToken = await validator.validateToken(token, options);
-  // Token is valid
-}
-catch (ex) {
-  // Token is invalid
-  console.error(ex);
-}
+const options = {
+  ver: '2.0'
+};
+// validate the token
+const validToken = await validator.validateToken(token, options);
 ```
 
-### Validate a Microsoft Entra token for a multitenant app
+#### Validate a Microsoft Entra token for a multitenant app
 
 ```javascript
-import { TokenValidator, getEntraJwksUri } from 'jwt-validate';
+const options = {
+  // list of allowed tenants
+  allowedTenants: ['00000000-0000-0000-0000-000000000000'],
+  // allowed audience
+  audience: '00000000-0000-0000-0000-000000000000',
+  // allowed issuer multitenant
+  issuer: 'https://login.microsoftonline.com/{tenantid}/v2.0'
+};
+// validate the token
+const validToken = await validator.validateToken(token, options);
+```
 
-// gets the JWKS URL for the Microsoft Entra common tenant
-const entraJwksUri = await getEntraJwksUri();
+#### Validate that the token has specified roles or scopes
 
-// create a new token validator with the JWKS URL
-const validator = new TokenValidator({
-  jwksUri: entraJwksUri
-});
-try {
-  // define validation options
-  const options = {
-    // allowed audience
-    audience: '00000000-0000-0000-0000-000000000000',
-    // allowed issuer multitenant
-    issuer: 'https://login.microsoftonline.com/{tenantid}/v2.0'
-  };
-  // validate the token
-  const validToken = await validator.validateToken(token, options);
-  // token is valid
-  // verify that the tenant is allowed by comparing the value of the
-  // validToken.tid property to your allow-list
-}
-catch (ex) {
-  // Token is invalid
-  console.error(ex);
-}
+Validate that the token has one of the specified roles or scopes. This is a common requirements for APIs that support delegated and application permissions and allow usage with several scopes.
+
+```javascript
+const options = {
+  scp: ['Customers.Read', 'Customers.ReadWrite'],
+  roles: ['Customers.Read.All', 'Customers.ReadWrite.All']
+};
+// validate the token
+const validToken = await validator.validateToken(token, options);
 ```
 
 ## API Reference
@@ -157,6 +165,7 @@ Responsible for validating JWT tokens using JWKS (JSON Web Key Set).
   - **Parameters**
     - `token`: string - The JWT token to validate.
     - `options` Object (optional): Validation options. [VerifyOptions](https://github.com/auth0/node-jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback) from the `jsonwebtoken` library with additional properties.
+      - `allowedTenants` string[] (optional): The allowed tenants for the JWT token. Compared against the `tid` claim.
       - `idtyp` string (optional): The [idtyp](https://learn.microsoft.com/en-us/entra/identity-platform/optional-claims-reference#:~:text=set%20as%20well.-,idtyp,-Token%20type) claim to be validated against.
       - `roles` string[] (optional): Roles expected in the 'roles' claim in the JWT token.
       - `scp` string[] (optional): Scopes expected in the 'scp' claim in the JWT token.
