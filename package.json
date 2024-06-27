@@ -26,7 +26,8 @@
     "build:esm": "tsc -p tsconfig.esm.json && npm run rename:esm",
     "build": "npm run build:cjs && npm run build:esm",
     "clean": "rimraf dist",
-    "rename:esm": "/bin/zsh ./scripts/fix-mjs.sh"
+    "rename:esm": "/bin/zsh ./scripts/fix-mjs.sh",
+    "prepack": "npm run clean && npm run build"
   },
   "keywords": [],
   "author": "Waldek Mastykarz",
