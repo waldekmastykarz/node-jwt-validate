@@ -1,3 +1,7 @@
+interface OpenIdConfiguration {
+  jwks_uri: string;
+}
+
 /**
  * Retrieves the JWKS URI for the specified tenant.
  * @param {string} [tenant='common'] - The tenant to retrieve the JWKS URI for.
@@ -5,6 +9,6 @@
  */
 export async function getEntraJwksUri(tenant = 'common') {
   const res = await fetch(`https://login.microsoftonline.com/${tenant}/.well-known/openid-configuration`);
-  const data = await res.json();
+  const data = (await res.json()) as OpenIdConfiguration;
   return data.jwks_uri;
 }

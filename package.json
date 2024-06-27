@@ -2,8 +2,18 @@
   "name": "jwt-validate",
   "version": "0.3.1",
   "description": "Validate JWT tokens in Node.js.",
-  "main": "index.js",
-  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.mjs",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/waldekmastykarz/node-jwt-validate.git"
@@ -12,7 +22,11 @@
     "url": "https://github.com/waldekmastykarz/node-jwt-validate/issues"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:esm": "tsc -p tsconfig.esm.json && npm run rename:esm",
+    "build": "npm run build:cjs && npm run build:esm",
+    "clean": "rimraf dist",
+    "rename:esm": "/bin/zsh ./scripts/fix-mjs.sh"
   },
   "keywords": [],
   "author": "Waldek Mastykarz",
@@ -21,5 +35,10 @@
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.1.0",
     "lru-memoizer": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.12",
+    "@types/node": "^20.14.9",
+    "rimraf": "^5.0.7"
   }
 }

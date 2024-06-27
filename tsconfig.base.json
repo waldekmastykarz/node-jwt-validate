@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "esnext"
+    ],
+    "declaration": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": [
+    "src"
+  ]
+}

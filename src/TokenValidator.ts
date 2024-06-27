@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { Jwt, JwtPayload, VerifyOptions } from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import { TokenCacheWrapper } from './TokenCacheWrapper.js';
 
@@ -7,9 +7,29 @@ const claimsType = Object.freeze({
   roles: 'roles'
 });
 
-class TokenValidator {
-  #client;
-  #cacheWrapper;
+export interface TokenValidatorOptions {
+  cache?: boolean;
+  cacheMaxAge?: number;
+  jwksUri: string;
+}
+
+export interface ValidateTokenOptions extends VerifyOptions {
+  idtyp?: string;
+  ver?: string;
+  scp?: string[];
+  roles?: string[];
+}
+
+export interface EntraJwtPayload extends JwtPayload {
+  idtyp?: string;
+  ver?: string;
+  scp?: string[];
+  roles?: string[];
+}
+
+export class TokenValidator {
+  private client;
+  private cacheWrapper;
 
   /**
    * Constructs a new instance of TokenValidator.
@@ -19,21 +39,21 @@ class TokenValidator {
    * @param {string} options.jwksUri The URI to fetch the JWKS keys from.
    * @throws {Error} If the options parameter is not provided.
    */
-  constructor(options) {
+  constructor(options: TokenValidatorOptions) {
     if (!options) {
       throw new Error('options is required');
     }
 
     const cache = options.cache ?? true;
 
-    this.#client = jwksClient({
+    this.client = jwksClient({
       cache,
       cacheMaxAge: options.cacheMaxAge ?? 24 * 60 * 60 * 1000, // 24 hours in milliseconds
       jwksUri: options.jwksUri
     });
     if (cache) {
-      this.#cacheWrapper = new TokenCacheWrapper();
-      this.#client.getSigningKey = this.#cacheWrapper.cacheWrapper(this.#client, options);
+      this.cacheWrapper = new TokenCacheWrapper(this.client, options);
+      this.client.getSigningKey = this.cacheWrapper.getCacheWrapper() as any;
     }
   }
 
@@ -48,14 +68,17 @@ class TokenValidator {
    * @returns {Promise<import('jsonwebtoken').JwtPayload | string>} The decoded and verified JWT token.
    * @throws {Error} If the token is invalid or the validation fails.
    */
-  async validateToken(token, options) {
+  public async validateToken(token: string, options?: ValidateTokenOptions) {
     const decoded = jwt.decode(token, { complete: true });
+    if (!decoded) {
+      throw new Error('jwt malformed');
+    }
 
     // necessary to support multitenant apps
-    this.#updateIssuer(options, decoded);
+    this.updateIssuer(decoded, options);
 
-    const key = await this.#getSigningKey(decoded.header.kid);
-    const verifiedToken = jwt.verify(token, key, options);
+    const key = await this.getSigningKey(decoded.header.kid);
+    const verifiedToken = jwt.verify(token, key, options) as EntraJwtPayload;
 
     if (!options) {
       return verifiedToken;
@@ -72,7 +95,7 @@ class TokenValidator {
     }
 
     if (options.scp || options.roles) {
-      const validateClaims = (claimsFromTheToken, requiredClaims, claimsType) => {
+      const validateClaims = (claimsFromTheToken: string[], requiredClaims: string[], claimsType: string) => {
         const hasAnyRequiredClaim = requiredClaims.some(claim => claimsFromTheToken.includes(claim));
         if (!hasAnyRequiredClaim) {
           throw new Error(`jwt does not contain any of the required ${claimsType}`);
@@ -101,30 +124,43 @@ class TokenValidator {
   /**
    * Clears the cache used by the TokenValidator.
    */
-  clearCache() {
-    this.#cacheWrapper?.cache.reset();
+  public clearCache() {
+    this.cacheWrapper?.cache.reset();
   }
 
   /**
    * Deletes a key from the cache.
    * @param {string} kid The key ID to delete from the cache.
    */
-  deleteKey(kid) {
-    this.#cacheWrapper?.cache.del(kid);
+  public deleteKey(kid: string) {
+    this.cacheWrapper?.cache.del(kid);
   }
 
-  async #getSigningKey(kid) {
-    const key = await this.#client.getSigningKey(kid);
+  private async getSigningKey(kid?: string) {
+    const key = await this.client.getSigningKey(kid);
     return key.getPublicKey();
   }
 
-  #updateIssuer(options, decoded) {
-    if (!options?.issuer || options.issuer.toLowerCase().indexOf('{tenantid}') < 0) {
+  private updateIssuer(jwt: Jwt, options?: ValidateTokenOptions) {
+    if (!options?.issuer || typeof jwt.payload !== 'object' || !jwt.payload.tid) {
       return;
     }
 
-    options.issuer = options.issuer.replace(/{tenantid}/i, decoded.payload.tid);
+    if (typeof options.issuer === 'string') {
+      if (options.issuer.toLowerCase().indexOf('{tenantid}') > -1) {
+        options.issuer = options.issuer.replace(/{tenantid}/i, jwt.payload.tid);
+      }
+      return;
+    }
+
+    if (Array.isArray(options.issuer)) {
+      options.issuer = options.issuer.map(issuer => {
+        if (issuer.toLowerCase().indexOf('{tenantid}') > -1) {
+          return issuer.replace(/{tenantid}/i, (jwt.payload as JwtPayload).tid);
+        }
+        return issuer;
+      });
+      return;
+    }
   }
 }
-
-export { TokenValidator };
