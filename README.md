@@ -1,6 +1,15 @@
 # jwt-validate
 
-Validate JWT tokens in Node.js.
+Easily validate JWT tokens in Node.js. This package builds on top of the [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken) and [jwks-rsa](https://www.npmjs.com/package/jwks-rsa) packages and extends their functionality with several convenience features, including:
+
+- validating tokens including downloading keys in one step,
+- for multitenant apps, validating tokens against a list of allowed tenants,
+- validating tokens against specific roles or scopes,
+- validating token type (application or user),
+- validating token version,
+- caching keys for better performance,
+- support for resetting cache and deleting specific keys without restarting the app,
+- convenience method to get the JWKS URL for the specified Microsoft Entra tenant
 
 [![npm version](https://badge.fury.io/js/jwt-validate.svg)](https://badge.fury.io/js/jwt-validate)
 
