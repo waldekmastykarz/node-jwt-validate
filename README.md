@@ -88,9 +88,9 @@ Following are several examples of using the package to validate JWT tokens in di
 ```javascript
 const options = {
   // allowed audience
-  audience: '00000000-0000-0000-0000-000000000000',
+  audience: 'cda00000-0000-0000-0000-a00000000001',
   // allowed issuer
-  issuer: 'https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/v2.0'
+  issuer: 'https://login.microsoftonline.com/cda00000-0000-0000-0000-700000000001/v2.0'
 };
 // validate the token
 const validToken = await validator.validateToken(token, options);
@@ -124,9 +124,9 @@ const validToken = await validator.validateToken(token, options);
 ```javascript
 const options = {
   // list of allowed tenants
-  allowedTenants: ['00000000-0000-0000-0000-000000000000'],
+  allowedTenants: ['cda00000-0000-0000-0000-700000000001'],
   // allowed audience
-  audience: '00000000-0000-0000-0000-000000000000',
+  audience: 'cda00000-0000-0000-0000-a00000000001',
   // allowed issuer multitenant
   issuer: 'https://login.microsoftonline.com/{tenantid}/v2.0'
 };
@@ -145,6 +145,19 @@ const options = {
 };
 // validate the token
 const validToken = await validator.validateToken(token, options);
+```
+
+#### Setup the token validator for use with the US Government cloud
+
+```javascript
+const { TokenValidator, getEntraJwksUri, CloudType } = require('jwt-validate');
+
+// gets the JWKS URL for the Microsoft Entra common tenant in the US Government cloud
+const entraJwksUri = await getEntraJwksUri('cda00000-0000-0000-0000-700000000002', CloudType.USGovernment);
+// create a new token validator with the JWKS URL
+const validator = new TokenValidator({
+  jwksUri: entraJwksUri
+});
 ```
 
 ## API Reference
@@ -202,14 +215,27 @@ Responsible for validating JWT tokens using JWKS (JSON Web Key Set).
 
 ### Functions
 
-#### `getEntraJwksUri(tenant)`
+#### `getEntraJwksUri(tenant, cloud)`
 
 - **Description**
   - Gets the JWKS URL for the Microsoft Entra common tenant.
 - **Parameters**
   - `tenant` string (optional, default=`common`) - The tenant to get the JWKS URL for.
+  - `cloud` string (optional, default=`CloudType.Public`) - The cloud to get the JWKS URL for.
 - **Returns**
   - `Promise<string>` - The JWKS URI.
+
+### Enums
+
+#### `CloudType`
+
+- **Description**
+  - Enum for the cloud types.
+- **Values**
+  - `Public` - Microsoft Azure public cloud.
+  - `Ppe` - Microsoft PPE.
+  - `USGovernment` - US Government cloud.
+  - `China` - Microsoft Chinese national/regional cloud.
 
 ## License
 
