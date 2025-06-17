@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",
-    "@types/node": "^20.14.9",
+    "@types/node": "^24.0.3",
     "rimraf": "^5.0.7",
     "typescript": "^5.8.3"
   }
