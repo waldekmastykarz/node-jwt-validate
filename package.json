@@ -35,7 +35,7 @@
   "dependencies": {
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.2.0",
-    "lru-memoizer": "^2.3.0"
+    "lru-memoizer": "^3.0.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",
