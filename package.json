@@ -26,7 +26,7 @@
     "build:esm": "tsc -p tsconfig.esm.json && npm run rename:esm",
     "build": "npm run build:cjs && npm run build:esm",
     "clean": "rimraf dist",
-    "rename:esm": "/bin/zsh ./scripts/fix-mjs.sh",
+    "rename:esm": "/bin/sh ./scripts/fix-mjs.sh",
     "prepack": "npm run clean && npm run build"
   },
   "keywords": [],
@@ -40,6 +40,7 @@
   "devDependencies": {
     "@types/debug": "^4.1.12",
     "@types/node": "^20.14.9",
-    "rimraf": "^5.0.7"
+    "rimraf": "^5.0.7",
+    "typescript": "^5.8.3"
   }
 }
