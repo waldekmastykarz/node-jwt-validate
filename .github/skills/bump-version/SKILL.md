@@ -1,4 +1,3 @@
-````skill
 ---
 name: bump-version
 description: This skill should be used when the user asks to "bump the version", "release a new version", "increment version", "update version number", "prepare a release", or mentions anything related to version management and semantic versioning.
@@ -138,5 +137,3 @@ Before executing version bump:
 - [ ] Received explicit confirmation
 - [ ] Ran `npm version <increment>`
 - [ ] Pushed commit and tag to remote
-
-````
