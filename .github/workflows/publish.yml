@@ -5,13 +5,14 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   build-and-publish:
     name: Build and Publish
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -19,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '22.x'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org/'
 
       - name: Install dependencies
@@ -28,30 +29,5 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Get version from tag
-        id: get_version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Update package version
-        run: npm version ${{ steps.get_version.outputs.version }} --no-git-tag-version --allow-same-version
-
-      - name: Check if beta version
-        id: check_beta
-        run: |
-          if [[ "${{ steps.get_version.outputs.version }}" == *-beta* ]]; then
-            echo "is_beta=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_beta=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Publish @next
-        if: ${{ steps.check_beta.outputs.is_beta == 'true' }}
-        run: npm publish --access public --provenance --tag next
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @latest
-        if: ${{ steps.check_beta.outputs.is_beta == 'false' }}
+      - name: Publish
         run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
