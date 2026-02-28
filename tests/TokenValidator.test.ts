@@ -314,6 +314,116 @@ describe('TokenValidator', () => {
     });
   });
 
+  describe('key rotation retry', () => {
+    it('should retry after clearing cache when SigningKeyNotFoundError is thrown', async () => {
+      const signingKeyNotFoundError = new Error('Unable to find a signing key');
+      signingKeyNotFoundError.name = 'SigningKeyNotFoundError';
+
+      const mockGetSigningKey = vi.fn()
+        .mockRejectedValueOnce(signingKeyNotFoundError)
+        .mockResolvedValueOnce({ getPublicKey: () => 'new-public-key' });
+
+      const jwksClientMod = await import('jwks-rsa');
+      vi.mocked(jwksClientMod.default).mockReturnValueOnce({
+        getSigningKey: mockGetSigningKey,
+      } as any);
+
+      const validator = new TokenValidator({ jwksUri: validJwksUri, cache: true });
+
+      const decodedToken = {
+        header: { kid: 'rotated-kid', alg: 'RS256' },
+        payload: { sub: 'user-123' },
+        signature: 'test-signature',
+      };
+      const verifiedPayload = { sub: 'user-123' };
+
+      vi.mocked(jwt.decode).mockReturnValue(decodedToken as any);
+      vi.mocked(jwt.verify).mockReturnValue(verifiedPayload as any);
+
+      const result = await validator.validateToken('valid-token');
+      expect(result).toEqual(verifiedPayload);
+    });
+
+    it('should throw when retry also fails with SigningKeyNotFoundError', async () => {
+      const signingKeyNotFoundError = new Error('Unable to find a signing key');
+      signingKeyNotFoundError.name = 'SigningKeyNotFoundError';
+
+      const mockGetSigningKey = vi.fn()
+        .mockRejectedValue(signingKeyNotFoundError);
+
+      const jwksClientMod = await import('jwks-rsa');
+      vi.mocked(jwksClientMod.default).mockReturnValueOnce({
+        getSigningKey: mockGetSigningKey,
+      } as any);
+
+      const validator = new TokenValidator({ jwksUri: validJwksUri, cache: true });
+
+      const decodedToken = {
+        header: { kid: 'unknown-kid', alg: 'RS256' },
+        payload: { sub: 'user-123' },
+        signature: 'test-signature',
+      };
+
+      vi.mocked(jwt.decode).mockReturnValue(decodedToken as any);
+
+      await expect(validator.validateToken('valid-token'))
+        .rejects.toThrow('Unable to find a signing key');
+    });
+
+    it('should not retry for non-SigningKeyNotFoundError errors', async () => {
+      const genericError = new Error('Network error');
+
+      const mockGetSigningKey = vi.fn()
+        .mockRejectedValue(genericError);
+
+      const jwksClientMod = await import('jwks-rsa');
+      vi.mocked(jwksClientMod.default).mockReturnValueOnce({
+        getSigningKey: mockGetSigningKey,
+      } as any);
+
+      const validator = new TokenValidator({ jwksUri: validJwksUri, cache: true });
+
+      const decodedToken = {
+        header: { kid: 'test-kid', alg: 'RS256' },
+        payload: { sub: 'user-123' },
+        signature: 'test-signature',
+      };
+
+      vi.mocked(jwt.decode).mockReturnValue(decodedToken as any);
+
+      await expect(validator.validateToken('valid-token'))
+        .rejects.toThrow('Network error');
+    });
+
+    it('should not retry when cache is disabled', async () => {
+      const signingKeyNotFoundError = new Error('Unable to find a signing key');
+      signingKeyNotFoundError.name = 'SigningKeyNotFoundError';
+
+      const mockGetSigningKey = vi.fn()
+        .mockRejectedValue(signingKeyNotFoundError);
+
+      const jwksClientMod = await import('jwks-rsa');
+      vi.mocked(jwksClientMod.default).mockReturnValueOnce({
+        getSigningKey: mockGetSigningKey,
+      } as any);
+
+      const validator = new TokenValidator({ jwksUri: validJwksUri, cache: false });
+
+      const decodedToken = {
+        header: { kid: 'test-kid', alg: 'RS256' },
+        payload: { sub: 'user-123' },
+        signature: 'test-signature',
+      };
+
+      vi.mocked(jwt.decode).mockReturnValue(decodedToken as any);
+
+      await expect(validator.validateToken('valid-token'))
+        .rejects.toThrow('Unable to find a signing key');
+      // Should only be called once (no retry without cache)
+      expect(mockGetSigningKey).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('cache management', () => {
     it('should clear cache when clearCache is called', () => {
       const validator = new TokenValidator({ jwksUri: validJwksUri, cache: true });

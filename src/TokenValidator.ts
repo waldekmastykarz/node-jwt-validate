@@ -79,7 +79,19 @@ export class TokenValidator {
     // necessary to support multitenant apps
     this.updateIssuer(decoded, options);
 
-    const key = await this.getSigningKey(decoded.header.kid);
+    let key: string;
+    try {
+      key = await this.getSigningKey(decoded.header.kid);
+    }
+    catch (err: any) {
+      if (err?.name === 'SigningKeyNotFoundError' && this.cacheWrapper) {
+        this.clearCache();
+        key = await this.getSigningKey(decoded.header.kid);
+      }
+      else {
+        throw err;
+      }
+    }
     const verifiedToken = jwt.verify(token, key, options) as EntraJwtPayload;
 
     if (!options) {
