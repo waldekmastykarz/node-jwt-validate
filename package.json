@@ -47,7 +47,7 @@
     "lru-memoizer": "^3.0.0"
   },
   "devDependencies": {
-    "@types/debug": "^4.1.12",
+    "@types/debug": "^4.1.13",
     "@types/node": "^25.5.0",
     "@vitest/coverage-v8": "^4.0.18",
     "rimraf": "^6.1.3",
