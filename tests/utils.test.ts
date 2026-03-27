@@ -38,7 +38,7 @@ describe('utils', () => {
 
       const result = await getEntraJwksUri();
 
-      expect(fetch).toHaveBeenCalledWith('https://login.microsoftonline.com/common/.well-known/openid-configuration');
+      expect(fetch).toHaveBeenCalledWith('https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration');
       expect(result).toBe(mockJwksUri);
     });
 
@@ -49,7 +49,7 @@ describe('utils', () => {
 
       const result = await getEntraJwksUri('my-tenant-id');
 
-      expect(fetch).toHaveBeenCalledWith('https://login.microsoftonline.com/my-tenant-id/.well-known/openid-configuration');
+      expect(fetch).toHaveBeenCalledWith('https://login.microsoftonline.com/my-tenant-id/v2.0/.well-known/openid-configuration');
       expect(result).toBe(mockJwksUri);
     });
 
@@ -61,7 +61,7 @@ describe('utils', () => {
 
       const result = await getEntraJwksUri('common', CloudType.Ppe);
 
-      expect(fetch).toHaveBeenCalledWith('https://login.windows-ppe.net/common/.well-known/openid-configuration');
+      expect(fetch).toHaveBeenCalledWith('https://login.windows-ppe.net/common/v2.0/.well-known/openid-configuration');
       expect(result).toBe(ppeJwksUri);
     });
 
@@ -73,7 +73,7 @@ describe('utils', () => {
 
       const result = await getEntraJwksUri('common', CloudType.USGovernment);
 
-      expect(fetch).toHaveBeenCalledWith('https://login.microsoftonline.us/common/.well-known/openid-configuration');
+      expect(fetch).toHaveBeenCalledWith('https://login.microsoftonline.us/common/v2.0/.well-known/openid-configuration');
       expect(result).toBe(usGovJwksUri);
     });
 
@@ -85,8 +85,30 @@ describe('utils', () => {
 
       const result = await getEntraJwksUri('common', CloudType.China);
 
-      expect(fetch).toHaveBeenCalledWith('https://login.chinacloudapi.cn/common/.well-known/openid-configuration');
+      expect(fetch).toHaveBeenCalledWith('https://login.chinacloudapi.cn/common/v2.0/.well-known/openid-configuration');
       expect(result).toBe(chinaJwksUri);
+    });
+
+    it('should use v1.0 endpoint when apiVersion is v1.0', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        json: () => Promise.resolve({ jwks_uri: mockJwksUri }),
+      } as Response);
+
+      const result = await getEntraJwksUri('my-tenant-id', CloudType.Public, 'v1.0');
+
+      expect(fetch).toHaveBeenCalledWith('https://login.microsoftonline.com/my-tenant-id/.well-known/openid-configuration');
+      expect(result).toBe(mockJwksUri);
+    });
+
+    it('should use v2.0 endpoint when apiVersion is v2.0', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        json: () => Promise.resolve({ jwks_uri: mockJwksUri }),
+      } as Response);
+
+      const result = await getEntraJwksUri('my-tenant-id', CloudType.Public, 'v2.0');
+
+      expect(fetch).toHaveBeenCalledWith('https://login.microsoftonline.com/my-tenant-id/v2.0/.well-known/openid-configuration');
+      expect(result).toBe(mockJwksUri);
     });
   });
 });

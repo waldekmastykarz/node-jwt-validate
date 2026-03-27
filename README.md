@@ -215,13 +215,14 @@ Responsible for validating JWT tokens using JWKS (JSON Web Key Set).
 
 ### Functions
 
-#### `getEntraJwksUri(tenant, cloud)`
+#### `getEntraJwksUri(tenant, cloud, apiVersion)`
 
 - **Description**
-  - Gets the JWKS URL for the Microsoft Entra common tenant.
+  - Gets the JWKS URL for the Microsoft Entra tenant.
 - **Parameters**
   - `tenant` string (optional, default=`common`) - The tenant to get the JWKS URL for.
   - `cloud` string (optional, default=`CloudType.Public`) - The cloud to get the JWKS URL for.
+  - `apiVersion` string (optional, default=`v2.0`) - The API version of the OpenID configuration endpoint to use. Possible values: `v1.0`, `v2.0`.
 - **Returns**
   - `Promise<string>` - The JWKS URI.
 
