@@ -42,6 +42,7 @@
   "author": "Waldek Mastykarz",
   "license": "MIT",
   "dependencies": {
+    "debug": "^4.4.3",
     "jsonwebtoken": "^9.0.3",
     "jwks-rsa": "^4.1.0",
     "lru-memoizer": "^3.0.0"
